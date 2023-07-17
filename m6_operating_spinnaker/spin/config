@@ -1,0 +1,11 @@
+auth:
+  enabled: true
+  oauth2:
+    authUrl: https://accounts.google.com/o/oauth2/auth
+    tokenUrl: https://accounts.google.com/o/oauth2/token
+    clientId: ""
+    clientSecret: ""
+    scopes:
+    - email
+gate:
+  endpoint: https://spinnaker-api.panda-labs.online

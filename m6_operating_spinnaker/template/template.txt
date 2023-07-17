@@ -1,0 +1,275 @@
+{
+  "id": "a9bb2ff3-ad6f-489b-a20c-83109ea1b478",
+"variables": [
+    {
+      "type": "string",
+      "defaultValue": "",
+      "description": "",
+      "name": "slack_name" # This is the name that's referenced in the SpEL expression later
+    },
+        {
+      "type": "string",
+      "defaultValue": "",
+      "description": "",
+      "name": "repo_name" # This is the name that's referenced in the SpEL expression later
+    },
+        {
+      "type": "string",
+      "defaultValue": "",
+      "description": "",
+      "name": "jenkins_name" # This is the name that's referenced in the SpEL expression later
+    },
+
+  ],
+  "metadata": {
+    "description": "A pipeline template derived from pipeline \"build-and-push\" in application \"hello-world\"",
+    "name": "ps-demo-template",
+    "owner": "panda.subhasish007",
+    "scopes": [
+      "global"
+    ]
+  },
+  "pipeline": {
+    "keepWaitingPipelines": false,
+    "limitConcurrent": true,
+    "notifications": [
+      {
+        "address": "${ templateVariables.slack_name }",
+        "level": "pipeline",
+        "type": "slack",
+        "when": [
+          "pipeline.starting",
+          "pipeline.complete",
+          "pipeline.failed"
+        ]
+      }
+    ],
+    "schema": "1",
+    "spelEvaluator": "v4",
+    "stages": [
+      {
+        "completeOtherBranchesThenFail": false,
+        "continuePipeline": true,
+        "failOnFailedExpressions": false,
+        "failPipeline": false,
+        "name": "Get git commit",
+        "refId": "2",
+        "requisiteStageRefIds": [],
+        "sendNotifications": true,
+        "type": "evaluateVariables",
+        "variables": [
+          {
+            "key": "git_hash",
+            "value": "${trigger[\"hash\"]}"
+          }
+        ]
+      },
+      {
+        "continuePipeline": false,
+        "failPipeline": true,
+        "job": "hello-world",
+        "master": "my-jenkins-master",
+        "name": "Jenkins build",
+        "notifications": [
+          {
+            "address": "ps-demo-channel",
+            "level": "stage",
+            "type": "slack",
+            "when": [
+              "stage.starting",
+              "stage.complete",
+              "stage.failed"
+            ]
+          }
+        ],
+        "parameters": {},
+        "propertyFile": "build.properties",
+        "refId": "3",
+        "requisiteStageRefIds": [
+          "2"
+        ],
+        "sendNotifications": true,
+        "type": "jenkins"
+      },
+      {
+        "failOnFailedExpressions": true,
+        "name": "Evaluate build tag",
+        "refId": "4",
+        "requisiteStageRefIds": [
+          "3"
+        ],
+        "type": "evaluateVariables",
+        "variables": [
+          {
+            "key": "build_number",
+            "value": "${ #stage('Jenkins build')['context']['buildNumber']}"
+          },
+          {
+            "key": "image_tag",
+            "value": "${ #stage('Jenkins build')['context']['Tag']}"
+          }
+        ]
+      },
+      {
+        "account": "tools-cluster",
+        "cloudProvider": "kubernetes",
+        "manifestArtifact": {
+          "artifactAccount": "shubhasish",
+          "id": "c44b9cf4-bcf4-47b9-87e2-af5ac7fd1743",
+          "location": "manifests",
+          "reference": "https://github.com/shubhasish/node-hello.git",
+          "type": "git/repo",
+          "version": "development"
+        },
+        "manifests": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "metadata": {
+              "annotations": {
+                "strategy.spinnaker.io/max-version-history": "2",
+                "traffic.spinnaker.io/load-balancers": "[\"service hello-world-service\"]"
+              },
+              "labels": {
+                "version": "v3"
+              },
+              "name": "hello-world-replica"
+            },
+            "spec": {
+              "replicas": 4,
+              "selector": {
+                "matchLabels": {
+                  "version": "v3"
+                }
+              },
+              "template": {
+                "metadata": {
+                  "labels": {
+                    "version": "v3"
+                  }
+                },
+                "spec": {
+                  "containers": [
+                    {
+                      "image": "shubhashish/helloworld:${image_tag}",
+                      "imagePullPolicy": "Always",
+                      "name": "hello-world-app",
+                      "ports": [
+                        {
+                          "containerPort": 3000
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+              "name": "hello-world-service"
+            },
+            "spec": {
+              "ports": [
+                {
+                  "name": "http",
+                  "port": 3000,
+                  "protocol": "TCP",
+                  "targetPort": 3000
+                }
+              ],
+              "selector": {
+                "app": "hello-world"
+              }
+            }
+          },
+          {
+            "apiVersion": "networking.k8s.io/v1",
+            "kind": "Ingress",
+            "metadata": {
+              "name": "hello-world-ingress"
+            },
+            "spec": {
+              "ingressClassName": "nginx",
+              "rules": [
+                {
+                  "host": "hello-stage.panda-labs.online",
+                  "http": {
+                    "paths": [
+                      {
+                        "backend": {
+                          "service": {
+                            "name": "hello-world-service",
+                            "port": {
+                              "number": 3000
+                            }
+                          }
+                        },
+                        "path": "/",
+                        "pathType": "Prefix"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "moniker": {
+          "app": "hello-world"
+        },
+        "name": "Deploy (Manifest)",
+        "namespaceOverride": "",
+        "notifications": [
+          {
+            "address": "ps-demo-channel",
+            "level": "stage",
+            "type": "slack",
+            "when": [
+              "stage.starting",
+              "stage.complete",
+              "stage.failed"
+            ]
+          }
+        ],
+        "refId": "5",
+        "requiredArtifactIds": [],
+        "requiredArtifacts": [],
+        "requisiteStageRefIds": [
+          "4"
+        ],
+        "sendNotifications": true,
+        "skipExpressionEvaluation": false,
+        "source": "text",
+        "trafficManagement": {
+          "enabled": true,
+          "options": {
+            "enableTraffic": true,
+            "namespace": "spinnaker",
+            "services": [
+              "service hello-world-service"
+            ],
+            "strategy": "highlander"
+          }
+        },
+        "type": "deployManifest"
+      }
+    ],
+    "triggers": [
+      {
+        "branch": "development",
+        "enabled": true,
+        "project": "shubhasish",
+        "secret": "Subhasish.007",
+        "slug": "node-hello",
+        "source": "github",
+        "type": "git"
+      }
+    ],
+    "updateTs": "1676327842000"
+  },
+  "protect": false,
+  "schema": "v2"
+}

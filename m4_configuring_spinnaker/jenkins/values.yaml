@@ -1,0 +1,334 @@
+controller:
+
+  # image: "jenkins/jenkins"
+  # tag: "2.361"
+  adminUser: "admin"
+  # adminPassword: <defaults to random>
+  # admin:
+  #   existingSecret: ""
+  #   userKey: jenkins-admin-user
+  #   passwordKey: jenkins-admin-password
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1024Mi"
+    limits:
+      cpu: "500m"
+      memory: "1024Mi"
+
+  javaOpts: "-Xms512m -Xmx512m"
+  # jenkinsOpts: ""
+
+  # List of plugins to be install during Jenkins controller start
+  installPlugins:
+    - kubernetes
+    - workflow-job
+    - docker-workflow
+    - workflow-aggregator
+    - credentials-binding
+    - git:4.11.5
+    - job-dsl
+    - jaxb
+    - configuration-as-code
+    - global-slack-notifier
+    - slack
+    - google-login
+    - google-oauth-plugin
+    - throttle-concurrents
+    - lockable-resources
+    - cloudbees-bitbucket-branch-source
+    - ansicolor
+    - prometheus
+    - cloudbees-disk-usage-simple
+    - inline-pipeline
+    - timestamper
+
+  # Set to false to download the minimum required version of all dependencies.
+  installLatestPlugins: true
+
+  # Set to true to download latest dependencies of any plugin that is requested to have the latest version.
+  installLatestSpecifiedPlugins: false
+
+  # Enable to initialize the Jenkins controller only once on initial installation.
+  # Without this, whenever the controller gets restarted (Evicted, etc.) it will fetch plugin updates which has the potential to cause breakage.
+  # Note that for this to work, `persistence.enabled` needs to be set to `true`
+  initializeOnce: false
+
+
+  # Name of default cloud configuration.
+  cloudName: "kubernetes"
+
+  # Below is the implementation of Jenkins Configuration as Code.  Add a key under configScripts for each configuration area,
+  # where each corresponds to a plugin or section of the UI.  Each key (prior to | character) is just a label, and can be any value.
+  # Keys are only used to give the section a meaningful name.  The only restriction is they may only contain RFC 1123 \ DNS label
+  # characters: lowercase letters, numbers, and hyphens.  The keys become the name of a configuration yaml file on the controller in
+  # /var/jenkins_home/casc_configs (by default) and will be processed by the Configuration as Code Plugin.  The lines after each |
+  # become the content of the configuration yaml file.  The first line after this is a JCasC root element, eg jenkins, credentials,
+  # etc.  Best reference is https://<jenkins_url>/configuration-as-code/reference.  The example below creates a welcome message:
+  JCasC:
+    defaultConfig: true
+    configScripts: {}
+
+    #  welcome-message: |
+    #    jenkins:
+    #      systemMessage: Welcome to our CI\CD server.  This Jenkins is configured and managed 'as code'.
+    # Ignored if securityRealm is defined in controller.JCasC.configScripts and
+    # ignored if controller.enableXmlConfig=true as controller.securityRealm takes precedence
+    # securityRealm: |-
+    #   googleOAuth2:
+    #     clientId: "742067653276-5ptd7gan6029jrdo3cqbbkm92kjsg3ig.apps.googleusercontent.com"
+    #     clientSecret: "${jenkins-secrets-google-client-secret}"
+    #     
+    # Ignored if authorizationStrategy is defined in controller.JCasC.configScripts
+    authorizationStrategy: |-
+      loggedInUsersCanDoAnything:
+        allowAnonymousRead: false
+    jenkins:
+      clouds: |-
+        kubernetes:
+            name: jenkins-k8s-agent
+            serverUrl: https://kubernetes.default
+            namespace: jenkins
+            jenkinsUrl: http://jenkins.jenkins.svc.cluster.local:8080
+            jenkinsTunnel: jenkins-agent.jenkins.svc.cluster.local:50000
+            webSocket: true
+            connectTimeout: 5
+            readTimeout: 15
+            podLabels:
+              - jenkins/jenkins-jenkins-agent = true
+
+  ingress:
+    enabled: false
+
+  # Expose Prometheus metrics
+  prometheus:
+    # If enabled, add the prometheus plugin to the list of plugins to install
+    # https://plugins.jenkins.io/prometheus
+    enabled: false
+    # Additional labels to add to the ServiceMonitor object
+    serviceMonitorAdditionalLabels: {}
+    # Set a custom namespace where to deploy ServiceMonitor resource
+    # serviceMonitorNamespace: monitoring
+    scrapeInterval: 60s
+    # This is the default endpoint used by the prometheus plugin
+    scrapeEndpoint: /prometheus
+    # Additional labels to add to the PrometheusRule object
+    alertingRulesAdditionalLabels: {}
+    # An array of prometheus alerting rules
+    # See here: https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+    # The `groups` root object is added by default, simply add the rule entries
+    alertingrules: []
+    # Set a custom namespace where to deploy PrometheusRule resource
+    prometheusRuleNamespace: ""
+
+  # Can be used to disable rendering controller test resources when using helm template
+  testEnabled: true
+
+  httpsKeyStore:
+    jenkinsHttpsJksSecretName: ''
+    enable: false
+    httpPort: 8081
+    path: "/var/jenkins_keystore"
+    fileName: "keystore.jks"
+    password: "password"
+    # Convert keystore.jks files content to base64 ( cat keystore.jks | base64 ) and put the output here
+    jenkinsKeyStoreBase64Encoded:
+agent:
+  enabled: true
+  defaultsProviderTemplate: ""
+  # URL for connecting to the Jenkins contoller
+  jenkinsUrl:
+  # connect to the specified host and port, instead of connecting directly to the Jenkins controller
+  jenkinsTunnel:
+  kubernetesConnectTimeout: 5
+  kubernetesReadTimeout: 15
+  maxRequestsPerHostStr: "32"
+  namespace:
+  image: "jenkins/inbound-agent"
+  tag: "4.11-1"
+  workingDir: "/home/jenkins/agent"
+  nodeUsageMode: "NORMAL"
+  customJenkinsLabels: []
+  # name of the secret to be used for image pulling
+  imagePullSecretName:
+  componentName: "jenkins-agent"
+  websocket: false
+  privileged: false
+  runAsUser:
+  runAsGroup:
+  resources:
+    requests:
+      cpu: "512m"
+      memory: "512Mi"
+    limits:
+      cpu: "512m"
+      memory: "512Mi"
+  # You may want to change this to true while testing a new image
+  alwaysPullImage: false
+  # Controls how agent pods are retained after the Jenkins build completes
+  # Possible values: Always, Never, OnFailure
+  podRetention: "Never"
+  # You can define the volumes that you want to mount for this container
+  # Allowed types are: ConfigMap, EmptyDir, HostPath, Nfs, PVC, Secret
+  # Configure the attributes as they appear in the corresponding Java class for that type
+  # https://github.com/jenkinsci/kubernetes-plugin/tree/master/src/main/java/org/csanchez/jenkins/plugins/kubernetes/volumes
+
+
+  # Executed command when side container gets started
+  command:
+  args: "${computer.jnlpmac} ${computer.name}"
+  # Side container name
+  sideContainerName: "jnlp"
+  # Doesn't allocate pseudo TTY by default
+  TTYEnabled: false
+  # Max number of spawned agent
+  containerCap: 10
+  # Pod name
+  podName: "default"
+  # Allows the Pod to remain active for reuse until the configured number of
+  # minutes has passed since the last step was executed on it.
+  idleMinutes: 0
+  # Raw yaml template for the Pod. For example this allows usage of toleration for agent pods.
+  # https://github.com/jenkinsci/kubernetes-plugin#using-yaml-to-define-pod-templates
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  yamlTemplate: ""
+  # yamlTemplate: |-
+  #   apiVersion: v1
+  #   kind: Pod
+  #   spec:
+  #     tolerations:
+  #     - key: "key"
+  #       operator: "Equal"
+  #       value: "value"
+  # Defines how the raw yaml field gets merged with yaml definitions from inherited pod templates: merge or override
+  yamlMergeStrategy: "override"
+  # Timeout in seconds for an agent to be online
+  connectTimeout: 100
+  # Annotations to apply to the pod.
+  annotations: {}
+
+  # Below is the implementation of custom pod templates for the default configured kubernetes cloud.
+  # Add a key under podTemplates for each pod template. Each key (prior to | character) is just a label, and can be any value.
+  # Keys are only used to give the pod template a meaningful name.  The only restriction is they may only contain RFC 1123 \ DNS label
+  # characters: lowercase letters, numbers, and hyphens. Each pod template can contain multiple containers.
+  # For this pod templates configuration to be loaded the following values must be set:
+  # controller.JCasC.defaultConfig: true
+  # Best reference is https://<jenkins_url>/configuration-as-code/reference#Cloud-kubernetes. The example below creates a python pod template.
+  podTemplates: {}
+  #  python: |
+  #    - name: python
+  #      label: jenkins-python
+  #      serviceAccount: jenkins
+  #      containers:
+  #        - name: python
+  #          image: python:3
+  #          command: "/bin/sh -c"
+  #          args: "cat"
+  #          ttyEnabled: true
+  #          privileged: true
+  #          resourceRequestCpu: "400m"
+  #          resourceRequestMemory: "512Mi"
+  #          resourceLimitCpu: "1"
+  #          resourceLimitMemory: "1024Mi"
+
+# Here you can add additional agents
+# They inherit all values from `agent` so you only need to specify values which differ
+
+persistence:
+  enabled: true
+  ## A manually managed Persistent Volume and Claim
+  ## Requires persistence.enabled: true
+  ## If defined, PVC must be created manually before volume will be bound
+  existingClaim:
+  ## jenkins data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  storageClass:
+  annotations: {}
+  labels: {}
+  accessMode: "ReadWriteOnce"
+  size: "15Gi"
+  volumes:
+  #  - name: nothing
+  #    emptyDir: {}
+  mounts:
+  #  - mountPath: /var/nothing
+  #    name: nothing
+  #    readOnly: true
+
+
+## Install Default RBAC roles and bindings
+rbac:
+  create: true
+  readSecrets: false
+
+serviceAccount:
+  create: true
+  # The name of the service account is autogenerated by default
+  name:
+  annotations: {}
+  imagePullSecretName:
+
+
+serviceAccountAgent:
+  # Specifies whether a ServiceAccount should be created
+  create: false
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  annotations: {}
+  imagePullSecretName:
+
+## Backup cronjob configuration
+## Ref: https://github.com/maorfr/kube-tasks
+backup:
+  # Backup must use RBAC
+  # So by enabling backup you are enabling RBAC specific for backup
+  enabled: false
+  # Used for label app.kubernetes.io/component
+  componentName: "backup"
+  # Schedule to run jobs. Must be in cron time format
+  # Ref: https://crontab.guru/
+  schedule: "0 2 * * *"
+  labels: {}
+  serviceAccount:
+    create: true
+    name:
+    annotations: {}
+    # Example for authorization to AWS S3 using kube2iam or IRSA
+    # Can also be done using environment variables
+    # iam.amazonaws.com/role: "jenkins"
+    # "eks.amazonaws.com/role-arn": "arn:aws:iam::123456789012:role/jenkins-backup"
+  # Set this to terminate the job that is running/failing continously and set the job status to "Failed"
+  activeDeadlineSeconds: ""
+  image:
+    repository: "maorfr/kube-tasks"
+    tag: "0.2.0"
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 1
+    limits:
+      memory: 1Gi
+      cpu: 1
+  # Destination to store the backup artifacts
+  # Supported cloud storage services: AWS S3, Minio S3, Azure Blob Storage, Google Cloud Storage
+  # Additional support can added. Visit this repository for details
+  # Ref: https://github.com/maorfr/skbn
+  destination: "s3://jenkins-data/backup"
+  # By enabling only the jenkins_home/jobs folder gets backed up, not the whole jenkins instance
+  onlyJobs: false
+  # Enable backup pod security context (must be `true` if runAsUser or fsGroup are set)
+  usePodSecurityContext: true
+  # When setting runAsUser to a different value than 0 also set fsGroup to the same value:
+  runAsUser: 1000
+  fsGroup: 1000
+  securityContextCapabilities: {}
+  #  drop:
+  #    - NET_RAW
+checkDeprecation: true

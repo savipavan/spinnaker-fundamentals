@@ -1,0 +1,17 @@
+fiat.restrictApplicationCreation: true
+auth.permissions.provider.application: aggregate
+auth.permissions.source.application.prefix:
+   enabled: true
+   prefixes:
+    - prefix: "*"   # “all” applications. it is possible to restrict application creation based on regex
+      permissions:
+        CREATE:
+        - "foo"   #Only users who belong to “foo” can create an application
+        READ:
+        - "foo"
+        - "bar"  #bar users can read and execute if allowed by the application  permissions
+        WRITE:
+        - "foo"
+        EXECUTE:
+        - "foo"
+        - "bar"

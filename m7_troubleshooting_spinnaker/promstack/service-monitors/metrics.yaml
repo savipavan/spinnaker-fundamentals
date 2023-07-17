@@ -1,0 +1,257 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spinnaker-clouddriver-metrics
+  namespace: spinnaker
+  labels:
+    app.kubernetes.io/component: spinnaker-clouddriver
+    app.kubernetes.io/name: spinnaker-clouddriver-metrics
+spec:
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 8008
+      targetPort: 8008
+  selector:
+    app.kubernetes.io/name: "clouddriver"
+  type: ClusterIP
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: spinnaker-clouddriver-metrics
+  namespace: infra
+  labels:
+    release: prom-stack
+spec:
+  endpoints:
+    - honorLabels: true
+      interval: 60s
+      path: "/prometheus_metrics"
+      port: metrics
+      scheme: http
+      scrapeTimeout: 20s
+  namespaceSelector:
+    matchNames:
+      - spinnaker
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: spinnaker-clouddriver
+      app.kubernetes.io/name: spinnaker-clouddriver-metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spinnaker-echo-metrics
+  namespace: spinnaker
+  labels:
+    app.kubernetes.io/component: spinnaker-echo
+    app.kubernetes.io/name: spinnaker-echo-metrics
+spec:
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 8008
+      targetPort: 8008
+  selector:
+    app.kubernetes.io/name: "echo"
+  type: ClusterIP
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: spinnaker-echo-metrics
+  namespace: infra
+  labels:
+    release: prom-stack
+spec:
+  endpoints:
+    - honorLabels: true
+      interval: 60s
+      path: "/prometheus_metrics"
+      port: metrics
+      scheme: http
+      scrapeTimeout: 20s
+  namespaceSelector:
+    matchNames:
+      - spinnaker
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: spinnaker-echo
+      app.kubernetes.io/name: spinnaker-echo-metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spinnaker-front50-metrics
+  namespace: spinnaker
+  labels:
+    app.kubernetes.io/component: spinnaker-front50
+    app.kubernetes.io/name: spinnaker-front50-metrics
+spec:
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 8008
+      targetPort: 8008
+  selector:
+    app.kubernetes.io/name: "front50"
+  type: ClusterIP
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: spinnaker-front50-metrics
+  namespace: infra
+  labels:
+    release: prom-stack
+spec:
+  endpoints:
+    - honorLabels: true
+      interval: 60s
+      path: "/prometheus_metrics"
+      port: metrics
+      scheme: http
+      scrapeTimeout: 20s
+  namespaceSelector:
+    matchNames:
+      - spinnaker
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: spinnaker-front50
+      app.kubernetes.io/name: spinnaker-front50-metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spinnaker-gate-metrics
+  namespace: spinnaker
+  labels:
+    app.kubernetes.io/component: spinnaker-gate
+    app.kubernetes.io/name: spinnaker-gate-metrics
+spec:
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 8008
+      targetPort: 8008
+  selector:
+    app.kubernetes.io/name: "gate"
+  type: ClusterIP
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: spinnaker-gate-metrics
+  namespace: infra
+  labels:
+    release: prom-stack
+spec:
+  endpoints:
+    - honorLabels: true
+      interval: 60s
+      path: "/prometheus_metrics"
+      port: metrics
+      scheme: http
+      scrapeTimeout: 20s
+  namespaceSelector:
+    matchNames:
+      - spinnaker
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: spinnaker-gate
+      app.kubernetes.io/name: spinnaker-gate-metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spinnaker-orca-metrics
+  namespace: spinnaker
+  labels:
+    app.kubernetes.io/component: spinnaker-orca
+    app.kubernetes.io/name: spinnaker-orca-metrics
+spec:
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 8008
+      targetPort: 8008
+  selector:
+    app.kubernetes.io/name: "orca"
+  type: ClusterIP
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: spinnaker-orca-metrics
+  namespace: infra
+  labels:
+    release: prom-stack
+spec:
+  endpoints:
+    - honorLabels: true
+      interval: 60s
+      path: "/prometheus_metrics"
+      port: metrics
+      scheme: http
+      scrapeTimeout: 20s
+  namespaceSelector:
+    matchNames:
+      - spinnaker
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: spinnaker-orca
+      app.kubernetes.io/name: spinnaker-orca-metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spinnaker-rosco-metrics
+  namespace: spinnaker
+  labels:
+    app.kubernetes.io/component: spinnaker-rosco
+    app.kubernetes.io/name: spinnaker-rosco-metrics
+spec:
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 8008
+      targetPort: 8008
+  selector:
+    app.kubernetes.io/name: "rosco"
+  type: ClusterIP
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: spinnaker-rosco-metrics
+  namespace: infra
+  labels:
+    release: prom-stack
+spec:
+  endpoints:
+    - honorLabels: true
+      interval: 60s
+      path: "/prometheus_metrics"
+      port: metrics
+      scheme: http
+      scrapeTimeout: 20s
+  namespaceSelector:
+    matchNames:
+      - spinnaker
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: spinnaker-rosco
+      app.kubernetes.io/name: spinnaker-rosco-metrics

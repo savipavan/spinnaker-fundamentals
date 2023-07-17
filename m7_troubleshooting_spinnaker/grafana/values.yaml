@@ -1,0 +1,67 @@
+replicas: 1
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: 3000
+
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: 3000
+  initialDelaySeconds: 60
+  timeoutSeconds: 30
+  failureThreshold: 10
+
+image:
+  repository: grafana/grafana
+  tag: 8.2.6
+  sha: ""
+  pullPolicy: IfNotPresent
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+    # targetPort: 4181 To be used with a proxy extraContainer
+  annotations: {}
+  labels: {}
+  portName: service
+
+
+deploymentStrategy:
+  type: Recreate
+
+env:
+  GF_AUTH_ANONYMOUS_ENABLED: false
+  GF_SECURITY_ALLOW_EMBEDDING: true
+
+datasources:
+  datasources.yml:
+    apiVersion: 1
+    datasources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki-distributed-querier.infra:3100
+      jsonData:
+        maxLines: 1000
+
+## Enable persistence using Persistent Volume Claims
+## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+##
+persistence:
+  type: pvc
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  finalizers:
+    - kubernetes.io/pvc-protection
+
+adminUser: admin
+adminPassword: admin
+
+
+useStatefulSet: true

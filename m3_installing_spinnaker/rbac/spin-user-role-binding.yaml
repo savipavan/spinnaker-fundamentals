@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: spinnaker-user-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: spinnaker-user-role
+subjects:
+  - namespace: spinnaker
+    kind: ServiceAccount
+    name: spinnaker-user-sa

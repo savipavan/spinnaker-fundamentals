@@ -1,0 +1,3 @@
+redis.poll.intervalSeconds: 40s
+
+redis.poll.timeoutSeconds: 20s

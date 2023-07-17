@@ -1,0 +1,77 @@
+{
+"id": "build-template",
+"schema": "v2",
+"variables": [
+    {
+      "type": "string",
+      "defaultValue": "",
+      "description": "",
+      "name": "slack_name" # This is the name that's referenced in the SpEL expression later
+    },
+        {
+      "type": "string",
+      "defaultValue": "",
+      "description": "",
+      "name": "repo_name" # This is the name that's referenced in the SpEL expression later
+    },
+        {
+      "type": "string",
+      "defaultValue": "",
+      "description": "",
+      "name": "jenkins_name" # This is the name that's referenced in the SpEL expression later
+    },
+
+  ],
+  "metadata": {
+    "name": "build-template",
+    "description": "A demonstrative Wait Pipeline.",
+    "owner": "panda.subhasish007",
+    "scopes": ["global"]
+  },
+"pipeline": {
+ "application": "${ templateVariables.slack_name }",
+ "id": "build-template",
+ "keepWaitingPipelines": false,
+ "lastModifiedBy": "panda.subhasish007",
+ "limitConcurrent": true,
+ "name": "simple-pipeline",
+ "schema": "v2",
+ "spelEvaluator": "v4",
+ "stages": [
+  {
+   "continuePipeline": false,
+   "failPipeline": true,
+   "job": "hello-world",
+   "master": "my-jenkins-master",
+   "name": "Jenkins",
+   "notifications": [
+    {
+     "address": "ps-demo-channel",
+     "level": "stage",
+     "type": "slack",
+     "when": [
+      "stage.starting"
+     ]
+    }
+   ],
+   "parameters": {},
+   "refId": "1",
+   "requisiteStageRefIds": [],
+   "sendNotifications": true,
+   "type": "jenkins"
+  }
+ ],
+ "triggers": [
+  {
+   "branch": "development",
+   "enabled": true,
+   "project": "shubhasish",
+   "secret": "Subhasish.007",
+   "slug": "node-hello",
+   "source": "github",
+   "type": "git"
+  }
+ ],
+ "updateTs": "1675719839000"
+}
+}

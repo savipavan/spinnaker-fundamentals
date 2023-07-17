@@ -1,0 +1,4 @@
+logging:
+  level:
+    # Enable debug logging by changing level to DEBUG
+    root: DEBUG

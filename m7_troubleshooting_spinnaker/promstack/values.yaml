@@ -1,0 +1,194 @@
+## Create default rules for monitoring the cluster
+##
+defaultRules:
+  create: true
+  rules:
+    alertmanager: false
+    etcd: false
+    general: false
+    k8s: false
+    kubeApiserver: false
+    kubeApiserverAvailability: false
+    kubeApiserverError: false
+    kubeApiserverSlos: false
+    kubelet: false
+    kubePrometheusGeneral: false
+    kubePrometheusNodeAlerting: false
+    kubePrometheusNodeRecording: false
+    kubernetesAbsent: false
+    kubernetesApps: false
+    kubernetesResources: false
+    kubernetesStorage: false
+    kubernetesSystem: false
+    kubeScheduler: false
+    kubeStateMetrics: false
+    network: false
+    node: false
+    prometheus: false
+    prometheusOperator: false
+    time: false
+
+
+## Provide custom recording or alerting rules to be deployed into the cluster.
+##
+additionalPrometheusRulesMap: []
+
+
+global:
+  rbac:
+    create: true
+
+## Configuration for alertmanager
+## ref: https://prometheus.io/docs/alerting/alertmanager/
+##
+alertmanager:
+  enabled: true
+  apiVersion: v2
+
+  ## Service account for Alertmanager to use.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+  ##
+  serviceAccount:
+    create: true
+    name: ""
+    annotations: {}
+
+  ## Alertmanager configuration directives
+  ## ref: https://prometheus.io/docs/alerting/configuration/#configuration-file
+  ##      https://prometheus.io/webtools/alerting/routing-tree-editor/
+  ##
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['job']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: 'null'
+      routes:
+      - match:
+          alertname: Watchdog
+        receiver: 'null'
+    receivers:
+    - name: 'null'
+
+
+  ## Settings affecting alertmanagerSpec
+  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#alertmanagerspec
+  ##
+  alertmanagerSpec:
+
+    ## Log level for Alertmanager to be configured with.
+    ##
+    logLevel: info
+
+    ## Size is the expected size of the alertmanager cluster. The controller will eventually make the size of the
+    ## running cluster equal to the expected size.
+    replicas: 1
+
+    ## Time duration Alertmanager shall retain data for. Default is '120h', and must match the regular expression
+    ## [0-9]+(ms|s|m|h) (milliseconds seconds minutes hours).
+    ##
+    retention: 24h
+
+    ## Storage is the definition of how storage will be used by the Alertmanager instances.
+    ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/user-guides/storage.md
+    ##
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: "default"
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: "50Gi"
+
+
+## Manages Prometheus and Alertmanager components
+##
+prometheusOperator:
+  enabled: true
+  admissionWebhooks:
+    enabled: true
+  # namespaces:
+  #   releaseNamespace: true
+  denyNamespaces:
+    - default
+
+
+## Deploy a Prometheus instance
+##
+prometheus:
+  enabled: true
+  thanosService:
+    enabled: true
+
+  ## Settings affecting prometheusSpec
+  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
+  ##
+  prometheusSpec:
+    ## Interval between consecutive scrapes.
+    ##
+    image:
+      repository: quay.io/prometheus/prometheus
+      tag: v2.32.1
+      sha: ""
+    containers:
+    - name: prometheus
+      livenessProbe:
+        httpGet:
+          path: /-/ready
+          port: web
+          scheme: HTTP
+        failureThreshold: 1000
+      readinessProbe:
+        failureThreshold: 1000
+    scrapeInterval: "20s"
+    ## Interval between consecutive evaluations.
+    ##
+    evaluationInterval: ""
+    podMonitorSelector:
+      matchLabels:
+        prometheus: ps-demo
+    ## Tolerations for use with node taints
+    ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    ##
+
+    retention: 5d
+
+    ## Maximum size of metrics
+    ##
+    retentionSize: "45GB"
+
+    ## Enable compression of the write-ahead log using Snappy.
+    ##
+    walCompression: true
+
+    ## If true, the Operator won't process any Prometheus configuration changes
+    ##
+    paused: false
+
+    ## Number of Prometheus replicas desired
+    ##
+    replicas: 1
+
+    ## Log level for Prometheus be configured in
+    ##
+    logLevel: info
+
+    ## Log format for Prometheus be configured in
+    ##
+    logFormat: logfmt
+
+    ## Prometheus StorageSpec for persistent data
+    ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/user-guides/storage.md
+    ##
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: "default"
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: "50Gi"

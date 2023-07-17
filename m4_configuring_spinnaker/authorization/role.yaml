@@ -1,0 +1,8 @@
+users:
+- username: "panda.subhasish007"
+  roles:
+  - foo
+  - bar
+- username: "subhashish"
+  roles:
+  - bar
